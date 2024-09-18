@@ -3,7 +3,8 @@ let readline = require('readline-sync');
 const INITIAL_MARKER = ' ';
 const HUMAN_MARKER = 'X';
 const COMPUTER_MARKER = 'O';
-const WINS_NEEDED = 2;
+const WINS_NEEDED = 1;
+const FIRST_PLAYER = 'O';
 const WINNING_POSITIONS = [
   [1, 2, 3],
   [4, 5, 6],
@@ -43,10 +44,6 @@ function initializeBoard() {
   }
 
   return board;
-}
-
-function updateBoard(board, marker, choice) {
-  board[choice] = marker;
 }
 
 function playerChoosesSquare(board) {
@@ -152,26 +149,51 @@ function detectThreat(board, marker) {
       ).length === 2
     ) {
       let threatenedSquare = WINNING_POSITIONS[line].filter(
-        sq => board[sq] !== marker
+        sq => board[sq] === INITIAL_MARKER
       )[0];
-      if (board[threatenedSquare] === ' ') return threatenedSquare;
+      if (board[threatenedSquare] === INITIAL_MARKER) return threatenedSquare;
     }
   }
   return null;
+}
+
+function chooseSquare(currentPlayer, board) {
+  return currentPlayer === 'X'
+    ? playerChoosesSquare(board)
+    : computerChooseSquares(board);
+}
+
+function alternatePlayer(currentPlayer) {
+  return currentPlayer === 'X' ? 'O' : 'X';
+}
+
+function updateBoard(currentPlayer, square, board) {
+  board[square] = currentPlayer;
+}
+
+function playAgain() {
+  let answer;
+  while (true) {
+    answer = readline.question('Play again? (y or n)\n').trim().toLowerCase();
+    if (['y', 'n'].includes(answer)) break;
+    else {
+      console.log(`Invalid choice. Please select either y or n.`);
+    }
+  }
+  return answer === 'y' ? true : false;
 }
 
 while (true) {
   let score = { Player: 0, Computer: 0 };
   while (true) {
     let board = initializeBoard();
+    let currentPlayer = FIRST_PLAYER;
 
     while (true) {
       displayBoard(board);
-      updateBoard(board, HUMAN_MARKER, playerChoosesSquare(board));
+      updateBoard(currentPlayer, chooseSquare(currentPlayer, board), board);
       if (someoneWon(board) || boardFull(board)) break;
-
-      updateBoard(board, COMPUTER_MARKER, computerChooseSquares(board));
-      if (someoneWon(board) || boardFull(board)) break;
+      currentPlayer = alternatePlayer(currentPlayer);
     }
 
     console.clear();
@@ -201,8 +223,7 @@ while (true) {
     }
   }
 
-  let answer = readline.question('Play again? (y or n)\n').trim();
-  if (answer !== 'y') break;
+  if (!playAgain()) break;
 }
 
 console.clear();
