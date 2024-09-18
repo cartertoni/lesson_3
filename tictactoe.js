@@ -3,7 +3,7 @@ let readline = require('readline-sync');
 const INITIAL_MARKER = ' ';
 const HUMAN_MARKER = 'X';
 const COMPUTER_MARKER = 'O';
-const WINS_NEEDED = 1;
+const WINS_NEEDED = 2;
 const FIRST_PLAYER = 'O';
 const WINNING_POSITIONS = [
   [1, 2, 3],
@@ -18,9 +18,7 @@ const WINNING_POSITIONS = [
 
 function displayBoard(board) {
   console.clear();
-
   console.log(`You are ${HUMAN_MARKER}. Computer is ${COMPUTER_MARKER}.`);
-
   console.log('');
   console.log('     |     |');
   console.log(`  ${board['1']}  |  ${board['2']}  |  ${board['3']}`);
@@ -131,7 +129,7 @@ function joinOr(list, delimiter = ', ', word = 'or') {
 
 function displayScore(score) {
   console.log(
-    `This game is first to ${WINS_NEEDED}.\nCurrent number of wins:\nPlayer: ${score.Player} Computer: ${score.Computer}`
+    `This match is first to ${WINS_NEEDED}.\nCurrent number of wins:\nPlayer: ${score.Player} Computer: ${score.Computer}`
   );
 }
 
@@ -158,13 +156,13 @@ function detectThreat(board, marker) {
 }
 
 function chooseSquare(currentPlayer, board) {
-  return currentPlayer === 'X'
+  return currentPlayer === HUMAN_MARKER
     ? playerChoosesSquare(board)
     : computerChooseSquares(board);
 }
 
 function alternatePlayer(currentPlayer) {
-  return currentPlayer === 'X' ? 'O' : 'X';
+  return currentPlayer === HUMAN_MARKER ? COMPUTER_MARKER : HUMAN_MARKER;
 }
 
 function updateBoard(currentPlayer, square, board) {
@@ -176,15 +174,15 @@ function playAgain() {
   while (true) {
     answer = readline.question('Play again? (y or n)\n').trim().toLowerCase();
     if (['y', 'n'].includes(answer)) break;
-    else {
-      console.log(`Invalid choice. Please select either y or n.`);
-    }
+    console.clear();
+    console.log(`Invalid choice. Please select either y or n.`);
   }
   return answer === 'y' ? true : false;
 }
 
 while (true) {
   let score = { Player: 0, Computer: 0 };
+
   while (true) {
     let board = initializeBoard();
     let currentPlayer = FIRST_PLAYER;
@@ -205,7 +203,9 @@ while (true) {
 
       if (score[winner] === WINS_NEEDED) {
         console.log(
-          `\n${winner} wins! They have reached ${WINS_NEEDED} wins. \nThey win the match!\n`
+          `\n${winner} wins! They have reached ${WINS_NEEDED} ${
+            WINS_NEEDED === 1 ? `win` : `wins`
+          }. \nThey win the match!\n`
         );
         break;
       } else {
@@ -218,12 +218,13 @@ while (true) {
     }
 
     while (true) {
-      if (readline.question('\nEnter any key to continue to the next round.\n'))
-        break;
+      if (readline.question('\nEnter any key to start the next game.\n')) break;
     }
   }
 
-  if (!playAgain()) break;
+  if (!playAgain()) {
+    break;
+  }
 }
 
 console.clear();
