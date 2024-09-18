@@ -62,17 +62,26 @@ function playerChoosesSquare(board) {
     }
     console.log("Sorry that's not a valid square.");
   }
-  updateBoard(board, HUMAN_MARKER, square);
+  return square;
 }
 
 function computerChooseSquares(board) {
-  let square = detectThreat(board);
-  console.log(square);
-  if (!square) {
-    let randomIndex = Math.floor(Math.random() * emptySquares(board).length);
-    square = emptySquares(board)[randomIndex];
+  let square = detectThreat(board, COMPUTER_MARKER);
+  if (square) {
+    return square;
   }
-  updateBoard(board, COMPUTER_MARKER, square);
+
+  square = detectThreat(board, HUMAN_MARKER);
+  if (square) {
+    return square;
+  }
+
+  if (board[5] === ' ') {
+    return 5;
+  }
+
+  let randomIndex = Math.floor(Math.random() * emptySquares(board).length);
+  return emptySquares(board)[randomIndex];
 }
 
 function emptySquares(board) {
@@ -129,21 +138,21 @@ function displayScore(score) {
   );
 }
 
-function detectThreat(board) {
+function detectThreat(board, marker) {
   for (let line = 0; line < WINNING_POSITIONS.length; line++) {
     let [sq1, sq2, sq3] = WINNING_POSITIONS[line];
 
-    let playerPositions = Object.keys(board)
-      .filter(key => board[key] === HUMAN_MARKER)
+    let currentPositions = Object.keys(board)
+      .filter(key => board[key] === marker)
       .map(number => Number(number));
 
     if (
-      playerPositions.filter(
+      currentPositions.filter(
         position => position === sq1 || position === sq2 || position === sq3
       ).length === 2
     ) {
       let threatenedSquare = WINNING_POSITIONS[line].filter(
-        sq => board[sq] !== HUMAN_MARKER
+        sq => board[sq] !== marker
       )[0];
       if (board[threatenedSquare] === ' ') return threatenedSquare;
     }
@@ -158,10 +167,10 @@ while (true) {
 
     while (true) {
       displayBoard(board);
-      playerChoosesSquare(board);
+      updateBoard(board, HUMAN_MARKER, playerChoosesSquare(board));
       if (someoneWon(board) || boardFull(board)) break;
 
-      computerChooseSquares(board);
+      updateBoard(board, COMPUTER_MARKER, computerChooseSquares(board));
       if (someoneWon(board) || boardFull(board)) break;
     }
 
@@ -173,26 +182,27 @@ while (true) {
       score[winner] += 1;
 
       if (score[winner] === WINS_NEEDED) {
-        console.log(`${winner} wins the match!`);
+        console.log(
+          `\n${winner} wins! They have reached ${WINS_NEEDED} wins. \nThey win the match!\n`
+        );
         break;
       } else {
         console.log(`${winner} won!`);
         displayScore(score);
       }
-
-      while (true) {
-        if (
-          readline.question('\nEnter any key to continue to the next round.\n')
-        )
-          break;
-      }
     } else {
       console.log("It's a tie!");
+      displayScore(score);
+    }
+
+    while (true) {
+      if (readline.question('\nEnter any key to continue to the next round.\n'))
+        break;
     }
   }
 
   let answer = readline.question('Play again? (y or n)\n').trim();
-  if (answer[0] !== 'y') break;
+  if (answer !== 'y') break;
 }
 
 console.clear();
