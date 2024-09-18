@@ -3,8 +3,8 @@ let readline = require('readline-sync');
 const INITIAL_MARKER = ' ';
 const HUMAN_MARKER = 'X';
 const COMPUTER_MARKER = 'O';
-const WINS_NEEDED = 2;
-const FIRST_PLAYER = 'O';
+const WINS_NEEDED = 3;
+const FIRST_PLAYER = 'X';
 const WINNING_POSITIONS = [
   [1, 2, 3],
   [4, 5, 6],
@@ -55,7 +55,7 @@ function playerChoosesSquare(board) {
     if (emptySquares(board).includes(square)) {
       break;
     }
-    console.log("Sorry that's not a valid square.");
+    console.log("Sorry that's not a valid square. Choose again!");
   }
   return square;
 }
@@ -177,7 +177,11 @@ function playAgain() {
     console.clear();
     console.log(`Invalid choice. Please select either y or n.`);
   }
-  return answer === 'y' ? true : false;
+  if (answer === 'y') {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 while (true) {
