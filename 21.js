@@ -29,6 +29,16 @@ function initializeDeck() {
   return deck;
 }
 
+function shuffle(deck) {
+  let shuffledDeck = [];
+  for (let i = 0; i < 52; i++) {
+    let randomIndex = Math.floor(Math.random() * deck.length);
+    let card = deck.splice(randomIndex, 1)[0];
+    shuffledDeck.push(card);
+  }
+  return shuffledDeck;
+}
+
 function deal(deck) {
   let playerHand = [getCard(deck), getCard(deck)];
   let dealerHand = [getCard(deck), getCard(deck)];
@@ -36,9 +46,7 @@ function deal(deck) {
 }
 
 function getCard(deck) {
-  let randomIndex = Math.floor(Math.random() * deck.length);
-  let card = deck.splice(randomIndex, 1)[0];
-  return card;
+  return deck.pop();
 }
 
 function formatCard(card) {
@@ -46,6 +54,7 @@ function formatCard(card) {
 }
 
 function displayHands(playerHand, dealerHand, flipped) {
+  console.clear();
   console.log(
     `Dealer shows ${
       flipped
@@ -53,31 +62,42 @@ function displayHands(playerHand, dealerHand, flipped) {
         : formatCard(dealerHand[0])
     }`
   );
-  console.log(`Player has ${playerHand.map(card => formatCard(card))}`);
+  console.log(
+    `Player has ${playerHand.map(card => formatCard(card)).join(' ')}`
+  );
 }
 
 function hit(hand, deck) {
-  console.log('Hit!');
   return hand.push(getCard(deck));
 }
 
 function calculateHand(hand) {
-  return hand
+  let handTotal = hand
     .map(card => card[1])
     .reduce((sum, current) => {
       if (Number(current) === Number(current)) {
-        return (sum += Number(current));
+        return sum + Number(current);
       } else if (current === 'A') {
-        return (sum += 11);
+        return sum + 11;
       } else {
-        return (sum += 10);
+        return sum + 10;
       }
     }, 0);
+
+  let aceCount = hand.filter(card => card[1] === 'A').length;
+  while (handTotal > 21) {
+    if (aceCount) {
+      handTotal -= 10;
+      aceCount -= 1;
+    } else {
+      break;
+    }
+  }
+  return handTotal;
 }
 
 function checkForBust(hand) {
-  let handTotal = calculateHand(hand);
-  return handTotal > 21;
+  return calculateHand(hand) > 21;
 }
 
 function dealerLogic(dealerHand, deck) {
@@ -86,9 +106,27 @@ function dealerLogic(dealerHand, deck) {
   }
 }
 
+function endGame(playerHand, dealerHand) {
+  let playerHandTotal = calculateHand(playerHand);
+  let dealerHandTotal = calculateHand(dealerHand);
+  displayHands(playerHand, dealerHand, 1);
+  console.log(
+    `\nPlayer has ${playerHandTotal}. Dealer ${
+      checkForBust(dealerHand) ? `busts!` : `has ${dealerHandTotal}.`
+    }`
+  );
+  if (playerHandTotal > dealerHandTotal || dealerHandTotal > 21) {
+    console.log('Player wins!');
+  } else if (dealerHandTotal > playerHandTotal) {
+    console.log('Dealer wins!');
+  } else {
+    console.log("It's a tie!");
+  }
+}
+
 function playAgain() {
   let answer = readline
-    .question('Play another hand? Y/N\n')
+    .question('\nPlay another hand? Y/N\n')
     .trim()
     .toLowerCase();
   if (answer !== 'y') return false;
@@ -96,32 +134,34 @@ function playAgain() {
 }
 
 while (true) {
-  let deck = initializeDeck();
+  let deck = shuffle(initializeDeck());
   let [playerHand, dealerHand] = deal(deck);
   displayHands(playerHand, dealerHand);
   while (true) {
-    let action = readline.question('Hit or stay?\n');
-    if (action === 'stay') break;
+    let action;
+    while (true) {
+      action = readline.question('\n(H)it or (S)tay?\n').trim().toLowerCase();
+      if (['s', 'h'].includes(action)) break;
+      displayHands(playerHand, dealerHand);
+      console.log("Invalid choice! Enter 'H' to hit or 'S' to stay.");
+    }
+    if (action === 's') break;
     hit(playerHand, deck);
-    displayHands(playerHand, dealerHand);
     if (checkForBust(playerHand)) {
-      console.log(`You bust!`);
+      console.clear();
+      displayHands(playerHand, dealerHand);
+      console.log('You bust! Dealer wins.');
       break;
     }
+    displayHands(playerHand, dealerHand);
   }
-  displayHands(playerHand, dealerHand, 1);
-  dealerLogic(dealerHand, deck);
-  displayHands(playerHand, dealerHand, 1);
+
+  if (!checkForBust(playerHand)) {
+    console.log('You stay!');
+    displayHands(playerHand, dealerHand, 1);
+    dealerLogic(dealerHand, deck);
+    endGame(playerHand, dealerHand);
+  }
 
   if (!playAgain()) break;
 }
-
-// while (true) {
-//   let deck = shuffle(initializeDeck());
-//   deal(deck);
-//   playPlayerHand()
-//   playComputerHand();
-//   displayHands();
-//   calculateWinner();
-//   if (!playAgain()) break;
-// }
