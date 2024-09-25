@@ -2,6 +2,7 @@ let readline = require('readline-sync');
 
 const PLAY_TO = 21;
 const DEALER_HITS_UNTIL = 17;
+const GAMES_TO_WIN_MATCH = 3;
 
 const SUITS = ['D', 'H', 'C', 'S'];
 const CARDS = [
@@ -32,7 +33,7 @@ function initializeDeck() {
 
 function shuffle(deck) {
   let shuffledDeck = [];
-  for (let i = 0; i < 52; i++) {
+  for (let counter = 0; counter < 52; counter++) {
     let randomIndex = Math.floor(Math.random() * deck.length);
     let card = deck.splice(randomIndex, 1)[0];
     shuffledDeck.push(card);
@@ -83,7 +84,11 @@ function calculateHand(hand) {
         return sum + 10;
       }
     }, 0);
+  handTotal = calculateAces(hand, handTotal);
+  return handTotal;
+}
 
+function calculateAces(hand, handTotal) {
   let aceCount = hand.filter(card => card[1] === 'A').length;
   while (handTotal > PLAY_TO) {
     if (aceCount) {
@@ -106,9 +111,9 @@ function isBust(handTotal) {
   return handTotal > PLAY_TO;
 }
 
-function displayResult(playerHandTotal, dealerHandTotal) {
+function displayGameResult(playerHandTotal, dealerHandTotal) {
   if (isBust(playerHandTotal)) {
-    console.log('You bust! Dealer wins!');
+    console.log('You bust! Dealer wins!\n');
   } else {
     console.log(
       `Player has ${playerHandTotal}. Dealer ${
@@ -116,11 +121,11 @@ function displayResult(playerHandTotal, dealerHandTotal) {
       }`
     );
     if (playerHandTotal > dealerHandTotal || dealerHandTotal > PLAY_TO) {
-      console.log('Player wins!');
+      console.log('Player wins!\n');
     } else if (dealerHandTotal > playerHandTotal) {
-      console.log('Dealer wins!');
+      console.log('Dealer wins!\n');
     } else {
-      console.log("It's a tie!");
+      console.log("It's a tie!\n");
     }
   }
 }
@@ -140,42 +145,71 @@ function playAgain() {
   return true;
 }
 
+function displayMatchWinner(playerWins, dealerWins) {
+  if (playerWins === GAMES_TO_WIN_MATCH) {
+    console.log(`Player wins the match ${playerWins} to ${dealerWins}!`);
+  } else {
+    console.log(`Dealer wins teh match ${dealerWins} to ${playerWins}!`);
+  }
+}
+
 console.clear();
 console.log(`Welcome! Today we're playing to ${PLAY_TO}\n`);
+
 while (true) {
-  let deck = shuffle(initializeDeck());
-  let [playerHand, dealerHand] = deal(deck);
-  let playerHandTotal = calculateHand(playerHand);
+  let playerWins = 0;
+  let dealerWins = 0;
+
   while (true) {
-    let action;
+    let deck = shuffle(initializeDeck());
+    let [playerHand, dealerHand] = deal(deck);
+    let playerHandTotal = calculateHand(playerHand);
+
     while (true) {
-      displayHands(playerHand, dealerHand);
-      console.log(`Your hand counts ${playerHandTotal} points.\n`);
-      action = readline.question('(H)it or (S)tay?\n').trim().toLowerCase();
-      if (['s', 'h'].includes(action)) break;
-      displayHands(playerHand, dealerHand);
-      console.log("Invalid choice! Enter 'H' to hit or 'S' to stay.");
+      let action;
+
+      while (true) {
+        displayHands(playerHand, dealerHand);
+        console.log(`Your hand counts ${playerHandTotal} points.\n`);
+        action = readline.question('(H)it or (S)tay?\n').trim().toLowerCase();
+        if (['s', 'h'].includes(action)) break;
+
+        console.clear();
+        console.log("Invalid choice! Enter 'H' to hit or 'S' to stay.\n");
+      }
+      if (action === 's') break;
+      hit(playerHand, deck);
+      playerHandTotal = calculateHand(playerHand);
+      if (playerHandTotal > PLAY_TO) {
+        break;
+      }
+      console.clear();
     }
-    if (action === 's') break;
-    hit(playerHand, deck);
-    playerHandTotal = calculateHand(playerHand);
-    if (playerHandTotal > PLAY_TO) {
-      break;
+
+    if (playerHandTotal <= PLAY_TO) {
+      displayHands(playerHand, dealerHand, 1);
+      dealerLogic(dealerHand, deck);
+    }
+
+    console.clear();
+    displayHands(playerHand, dealerHand, 1);
+    displayGameResult(playerHandTotal, calculateHand(dealerHand));
+
+    if (playerWins === 3 || dealerWins === 3) break;
+
+    while (true) {
+      let nextHand = readline
+        .question('(D)eal the next hand\n')
+        .trim()
+        .toLowerCase();
+      if (nextHand === 'd') break;
+      console.clear();
+      console.log("Invalid input! Enter 'D' to deal the next hand.\n");
     }
     console.clear();
   }
-
-  if (playerHandTotal <= PLAY_TO) {
-    displayHands(playerHand, dealerHand, 1);
-    dealerLogic(dealerHand, deck);
-  }
-
-  console.clear();
-  displayHands(playerHand, dealerHand, 1);
-  displayResult(playerHandTotal, calculateHand(dealerHand));
-
+  displayMatchWinner(playerWins, dealerWins);
   if (!playAgain()) break;
-  console.clear();
 }
 
 console.clear();
