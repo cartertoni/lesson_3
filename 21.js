@@ -2,7 +2,7 @@ let readline = require('readline-sync');
 
 const PLAY_TO = 21;
 const DEALER_HITS_UNTIL = 17;
-const GAMES_TO_WIN_MATCH = 3;
+const HANDS_TO_WIN_MATCH = 3;
 
 const SUITS = ['D', 'H', 'C', 'S'];
 const CARDS = [
@@ -111,18 +111,30 @@ function isBust(handTotal) {
   return handTotal > PLAY_TO;
 }
 
-function displayGameResult(playerHandTotal, dealerHandTotal) {
-  if (isBust(playerHandTotal)) {
+function calculateHandWinner(handCount) {
+  if (isBust(handCount.Player)) {
+    return 'Dealer';
+  } else if (handCount.Player > handCount.Dealer || isBust(handCount.Dealer)) {
+    return 'Player';
+  } else if (handCount.Dealer > handCount.Player) {
+    return 'Dealer';
+  } else {
+    return 'Tie';
+  }
+}
+
+function displayGameResult(handCount) {
+  if (isBust(handCount.Player)) {
     console.log('You bust! Dealer wins!\n');
   } else {
     console.log(
-      `Player has ${playerHandTotal}. Dealer ${
-        dealerHandTotal > PLAY_TO ? `busts!` : `has ${dealerHandTotal}.`
+      `Player has ${handCount.Player}. Dealer ${
+        isBust(handCount.Dealer) ? `busts!` : `has ${handCount.Dealer}.`
       }`
     );
-    if (playerHandTotal > dealerHandTotal || dealerHandTotal > PLAY_TO) {
+    if (handCount.Player > handCount.Dealer || isBust(handCount.Dealer)) {
       console.log('Player wins!\n');
-    } else if (dealerHandTotal > playerHandTotal) {
+    } else if (handCount.Dealer > handCount.Player) {
       console.log('Dealer wins!\n');
     } else {
       console.log("It's a tie!\n");
@@ -130,11 +142,21 @@ function displayGameResult(playerHandTotal, dealerHandTotal) {
   }
 }
 
+function displayScore(score) {
+  console.log(
+    `Player has won ${score['Player']} hand${
+      score['Player'] === 1 ? '' : 's'
+    }. Dealer has won ${score['Dealer']} hand${
+      score['Dealer'] === 1 ? '' : 's'
+    }. It is first to ${HANDS_TO_WIN_MATCH}.\n`
+  );
+}
+
 function playAgain() {
   let answer;
   while (true) {
     answer = readline
-      .question('\nPlay another hand? (Y)es or (N)o\n')
+      .question('\nPlay another match? (Y)es or (N)o\n')
       .trim()
       .toLowerCase();
     if (['y', 'n'].includes(answer)) break;
@@ -145,32 +167,44 @@ function playAgain() {
   return true;
 }
 
-function displayMatchWinner(playerWins, dealerWins) {
-  if (playerWins === GAMES_TO_WIN_MATCH) {
-    console.log(`Player wins the match ${playerWins} to ${dealerWins}!`);
+function calculateMatchWinner(score) {
+  if (score.Player === 3) {
+    return 'Player';
   } else {
-    console.log(`Dealer wins teh match ${dealerWins} to ${playerWins}!`);
+    return 'Dealer';
   }
 }
 
+function displayMatchWinner(winner, score) {
+  console.log(
+    `${winner} wins the match ${score[winner]} hands to ${
+      winner === 'Player' ? score['Dealer'] : score['Player']
+    }`
+  );
+}
+
 console.clear();
-console.log(`Welcome! Today we're playing to ${PLAY_TO}\n`);
+console.log(
+  `Welcome! Today we're playing hands to ${PLAY_TO}. First to win ${HANDS_TO_WIN_MATCH} hands will win the match. Good luck!\n`
+);
 
 while (true) {
-  let playerWins = 0;
-  let dealerWins = 0;
+  let score = { Player: 0, Dealer: 0 };
 
   while (true) {
     let deck = shuffle(initializeDeck());
     let [playerHand, dealerHand] = deal(deck);
-    let playerHandTotal = calculateHand(playerHand);
+    let handCount = {
+      Player: calculateHand(playerHand),
+      Dealer: calculateHand(dealerHand),
+    };
 
     while (true) {
       let action;
 
       while (true) {
         displayHands(playerHand, dealerHand);
-        console.log(`Your hand counts ${playerHandTotal} points.\n`);
+        console.log(`Your hand counts ${handCount.Player} points.\n`);
         action = readline.question('(H)it or (S)tay?\n').trim().toLowerCase();
         if (['s', 'h'].includes(action)) break;
 
@@ -178,24 +212,34 @@ while (true) {
         console.log("Invalid choice! Enter 'H' to hit or 'S' to stay.\n");
       }
       if (action === 's') break;
+
       hit(playerHand, deck);
-      playerHandTotal = calculateHand(playerHand);
-      if (playerHandTotal > PLAY_TO) {
+      handCount.Player = calculateHand(playerHand);
+      if (isBust(handCount.Player)) {
         break;
       }
       console.clear();
     }
 
-    if (playerHandTotal <= PLAY_TO) {
+    if (handCount.Player <= PLAY_TO) {
       displayHands(playerHand, dealerHand, 1);
       dealerLogic(dealerHand, deck);
+      handCount.Dealer = calculateHand(dealerHand);
     }
 
     console.clear();
     displayHands(playerHand, dealerHand, 1);
-    displayGameResult(playerHandTotal, calculateHand(dealerHand));
+    let winner = calculateHandWinner(handCount);
+    displayGameResult(handCount);
+    score[winner] += 1;
 
-    if (playerWins === 3 || dealerWins === 3) break;
+    if (
+      score['Player'] === HANDS_TO_WIN_MATCH ||
+      score['Dealer'] === HANDS_TO_WIN_MATCH
+    ) {
+      break;
+    }
+    displayScore(score);
 
     while (true) {
       let nextHand = readline
@@ -208,8 +252,10 @@ while (true) {
     }
     console.clear();
   }
-  displayMatchWinner(playerWins, dealerWins);
+  displayMatchWinner(calculateMatchWinner(score), score);
+
   if (!playAgain()) break;
+  console.clear();
 }
 
 console.clear();
