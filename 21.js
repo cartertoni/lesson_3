@@ -152,6 +152,19 @@ function displayScore(score) {
   );
 }
 
+function nextHand() {
+  while (true) {
+    let nextHand = readline
+      .question('(D)eal the next hand\n')
+      .trim()
+      .toLowerCase();
+    if (nextHand === 'd') break;
+    console.clear();
+    console.log("Invalid input! Enter 'D' to deal the next hand.\n");
+  }
+  return 'Come on, Math.random(), give me something good!';
+}
+
 function playAgain() {
   let answer;
   while (true) {
@@ -183,12 +196,11 @@ function displayMatchWinner(winner, score) {
   );
 }
 
-console.clear();
-console.log(
-  `Welcome! Today we're playing hands to ${PLAY_TO}. First to win ${HANDS_TO_WIN_MATCH} hands will win the match. Good luck!\n`
-);
-
 while (true) {
+  console.clear();
+  console.log(
+    `Welcome! Today we're playing hands to ${PLAY_TO}. First to win ${HANDS_TO_WIN_MATCH} hands will win the match. Good luck!\n`
+  );
   let score = { Player: 0, Dealer: 0 };
 
   while (true) {
@@ -239,16 +251,7 @@ while (true) {
       break;
     }
     displayScore(score);
-
-    while (true) {
-      let nextHand = readline
-        .question('(D)eal the next hand\n')
-        .trim()
-        .toLowerCase();
-      if (nextHand === 'd') break;
-      console.clear();
-      console.log("Invalid input! Enter 'D' to deal the next hand.\n");
-    }
+    nextHand();
     console.clear();
   }
   displayMatchWinner(calculateMatchWinner(score), score);
