@@ -168,7 +168,7 @@ function playAgain() {
 }
 
 function calculateMatchWinner(score) {
-  if (score.Player === 3) {
+  if (score.Player === HANDS_TO_WIN_MATCH) {
     return 'Player';
   } else {
     return 'Dealer';
@@ -179,7 +179,7 @@ function displayMatchWinner(winner, score) {
   console.log(
     `${winner} wins the match ${score[winner]} hands to ${
       winner === 'Player' ? score['Dealer'] : score['Player']
-    }`
+    }.`
   );
 }
 
@@ -229,9 +229,8 @@ while (true) {
 
     console.clear();
     displayHands(playerHand, dealerHand, 1);
-    let winner = calculateHandWinner(handCount);
     displayGameResult(handCount);
-    score[winner] += 1;
+    score[calculateHandWinner(handCount)] += 1;
 
     if (
       score['Player'] === HANDS_TO_WIN_MATCH ||
